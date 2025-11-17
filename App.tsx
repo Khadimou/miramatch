@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreenExpo from 'expo-splash-screen';
 import { AuthProvider } from './src/context/AuthContext';
 import { SwipeProvider } from './src/context/SwipeContext';
+import { MessagesProvider } from './src/context/MessagesContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { SplashScreen } from './src/components/SplashScreen';
 
@@ -41,8 +42,10 @@ export default function App() {
       <SafeAreaProvider>
         <AuthProvider>
           <SwipeProvider>
-            <AppNavigator />
-            <StatusBar style="auto" />
+            <MessagesProvider>
+              <AppNavigator />
+              <StatusBar style="auto" />
+            </MessagesProvider>
           </SwipeProvider>
         </AuthProvider>
       </SafeAreaProvider>

@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSwipe } from '../context/SwipeContext';
 import { ProjectCard } from '../components/ProjectCard';
+import { ProjectDetailsModal } from './ProjectDetailsModal';
 import { COLORS, SIZES, GRADIENTS } from '../constants/theme';
 import { Project } from '../types';
 
@@ -28,6 +29,7 @@ export const SwipeScreen = ({ navigation }: SwipeScreenProps) => {
   const position = useRef(new Animated.ValueXY()).current;
   const [likeOpacity] = useState(new Animated.Value(0));
   const [nopeOpacity] = useState(new Animated.Value(0));
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -106,6 +108,20 @@ export const SwipeScreen = ({ navigation }: SwipeScreenProps) => {
   };
 
   const handlePassPress = () => {
+    swipeLeft();
+  };
+
+  const handleDetailsPress = () => {
+    setShowDetailsModal(true);
+  };
+
+  const handleDetailsLike = () => {
+    setShowDetailsModal(false);
+    swipeRight();
+  };
+
+  const handleDetailsPass = () => {
+    setShowDetailsModal(false);
     swipeLeft();
   };
 
@@ -206,16 +222,17 @@ export const SwipeScreen = ({ navigation }: SwipeScreenProps) => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, styles.superLikeButton]}
+          style={[styles.actionButton, styles.detailsButton]}
+          onPress={handleDetailsPress}
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={GRADIENTS.gold}
+            colors={['#6C5CE7', '#A29BFE']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[styles.buttonGradient, styles.superLikeGradient]}
+            style={[styles.buttonGradient, styles.detailsGradient]}
           >
-            <Text style={[styles.buttonIcon, styles.superLikeIcon]}>★</Text>
+            <Text style={[styles.buttonIcon, styles.detailsIcon]}>👁</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -234,6 +251,15 @@ export const SwipeScreen = ({ navigation }: SwipeScreenProps) => {
           </LinearGradient>
         </TouchableOpacity>
       </View>
+
+      {/* Project Details Modal */}
+      <ProjectDetailsModal
+        visible={showDetailsModal}
+        project={currentProject}
+        onClose={() => setShowDetailsModal(false)}
+        onLike={handleDetailsLike}
+        onPass={handleDetailsPass}
+      />
     </SafeAreaView>
   );
 };
@@ -329,6 +355,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   superLikeIcon: {
+    fontSize: 28,
+  },
+  detailsButton: {
+    transform: [{ scale: 0.8 }],
+  },
+  detailsGradient: {
+    width: 56,
+    height: 56,
+  },
+  detailsIcon: {
     fontSize: 28,
   },
   emptyContainer: {
