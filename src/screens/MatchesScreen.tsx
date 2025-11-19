@@ -6,10 +6,13 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useSwipe } from '../context/SwipeContext';
-import { COLORS, SIZES, SHADOWS } from '../constants/theme';
+import { COLORS, SIZES, SHADOWS, GRADIENTS } from '../constants/theme';
 import { Project } from '../types';
 
 interface MatchesScreenProps {
@@ -36,37 +39,78 @@ export const MatchesScreen = ({ navigation }: MatchesScreenProps) => {
             navigation.navigate('QuoteModal', { project: item });
           }
         }}
+        activeOpacity={0.9}
       >
-        <Image
-          source={{
-            uri: item.images[0] || 'https://via.placeholder.com/100',
-          }}
-          style={styles.projectImage}
-        />
+        <View style={styles.cardImageContainer}>
+          <Image
+            source={{
+              uri: item.images[0] || 'https://via.placeholder.com/100',
+            }}
+            style={styles.projectImage}
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.3)']}
+            style={styles.imageOverlay}
+          />
+        </View>
+
         <View style={styles.projectInfo}>
-          <Text style={styles.projectTitle}>{item.title}</Text>
-          <Text style={styles.projectBudget}>
-            {item.budget.min}-{item.budget.max}
-            {item.budget.currency}
-          </Text>
-          <Text style={styles.clientName}>{item.client.name}</Text>
+          <Text style={styles.projectTitle} numberOfLines={2}>{item.title}</Text>
+
+          <View style={styles.budgetContainer}>
+            <LinearGradient
+              colors={GRADIENTS.warm}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.budgetBadge}
+            >
+              <Text style={styles.budgetIcon}>💰</Text>
+              <Text style={styles.projectBudget}>
+                {item.budget.min}-{item.budget.max} {item.budget.currency}
+              </Text>
+            </LinearGradient>
+          </View>
+
+          <View style={styles.clientRow}>
+            <Text style={styles.clientIcon}>👤</Text>
+            <Text style={styles.clientName}>{item.client.name}</Text>
+          </View>
+
           {hasQuote && quote ? (
-            <View style={styles.quoteStatus}>
+            <LinearGradient
+              colors={GRADIENTS.success}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.quoteStatus}
+            >
+              <Text style={styles.quoteStatusIcon}>✓</Text>
               <Text style={styles.quoteStatusText}>
-                ✓ Devis envoyé: {quote.price}€
+                Devis envoyé: {quote.price} {quote.currency || '€'}
               </Text>
-            </View>
+            </LinearGradient>
           ) : (
-            <View style={styles.pendingStatus}>
-              <Text style={styles.pendingStatusText}>
-                En attente de devis
-              </Text>
-            </View>
+            <BlurView intensity={80} tint="light" style={styles.pendingStatus}>
+              <LinearGradient
+                colors={[COLORS.warning, COLORS.warning]}
+                style={styles.pendingStatusInner}
+              >
+                <Text style={styles.pendingStatusIcon}>⏳</Text>
+                <Text style={styles.pendingStatusText}>
+                  Cliquez pour envoyer un devis
+                </Text>
+              </LinearGradient>
+            </BlurView>
           )}
         </View>
+
         {!hasQuote && (
-          <View style={styles.arrow}>
-            <Text style={styles.arrowText}>→</Text>
+          <View style={styles.arrowContainer}>
+            <LinearGradient
+              colors={GRADIENTS.primary}
+              style={styles.arrowCircle}
+            >
+              <Text style={styles.arrowText}>→</Text>
+            </LinearGradient>
           </View>
         )}
       </TouchableOpacity>
@@ -76,31 +120,78 @@ export const MatchesScreen = ({ navigation }: MatchesScreenProps) => {
   if (matchedProjects.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>Aucun match pour le moment</Text>
-          <Text style={styles.emptyText}>
-            Likez des projets pour les voir apparaître ici et pouvoir proposer
-            vos devis !
-          </Text>
-        </View>
+        <LinearGradient
+          colors={['#FFFFFF', '#FAFBFF', '#F5F7FF']}
+          style={styles.emptyContainer}
+        >
+          <View style={styles.emptyContent}>
+            <View style={styles.emptyIconContainer}>
+              <LinearGradient
+                colors={GRADIENTS.primary}
+                style={styles.emptyIconCircle}
+              >
+                <Text style={styles.emptyIcon}>💫</Text>
+              </LinearGradient>
+            </View>
+            <Text style={styles.emptyTitle}>Aucun match pour le moment</Text>
+            <Text style={styles.emptyText}>
+              Likez des projets dans l'onglet "Découvrir" pour les voir apparaître ici et proposer vos devis !
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Discover')}
+              style={styles.emptyButton}
+            >
+              <LinearGradient
+                colors={GRADIENTS.warm}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.emptyButtonGradient}
+              >
+                <Text style={styles.emptyButtonText}>🔥 Découvrir des projets</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
       </SafeAreaView>
     );
   }
 
+  // Calculer les statistiques
+  const quotedCount = quotes.length;
+  const pendingCount = matchedProjects.length - quotedCount;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mes Matches</Text>
+      <LinearGradient
+        colors={GRADIENTS.primary}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      >
+        <Text style={styles.headerTitle}>💬 Mes Matches</Text>
         <Text style={styles.headerSubtitle}>
-          {matchedProjects.length} projet{matchedProjects.length > 1 ? 's' : ''}
+          {matchedProjects.length} projet{matchedProjects.length > 1 ? 's' : ''} liké{matchedProjects.length > 1 ? 's' : ''}
         </Text>
-      </View>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{quotedCount}</Text>
+            <Text style={styles.statLabel}>Devis envoyés</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{pendingCount}</Text>
+            <Text style={styles.statLabel}>En attente</Text>
+          </View>
+        </View>
+      </LinearGradient>
 
       <FlatList
         data={matchedProjects}
         renderItem={renderProject}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
@@ -112,105 +203,192 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    paddingTop: SIZES.sm,
+    paddingTop: SIZES.md,
     paddingHorizontal: SIZES.lg,
-    paddingBottom: SIZES.md,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingBottom: SIZES.lg,
   },
   headerTitle: {
-    fontSize: SIZES.fontXl,
+    fontSize: SIZES.fontXxl,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
+    color: COLORS.white,
+    marginBottom: SIZES.xs,
   },
   headerSubtitle: {
     fontSize: SIZES.fontMd,
-    color: COLORS.textSecondary,
-    marginTop: SIZES.xs,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: SIZES.lg,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: SIZES.radiusMd,
+    padding: SIZES.md,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: SIZES.fontXxl,
+    fontWeight: 'bold',
+    color: COLORS.white,
+    marginBottom: SIZES.xs,
+  },
+  statLabel: {
+    fontSize: SIZES.fontSm,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginHorizontal: SIZES.md,
   },
   listContent: {
     padding: SIZES.lg,
     paddingBottom: SIZES.xxl + SIZES.xl,
   },
   projectCard: {
-    flexDirection: 'row',
     backgroundColor: COLORS.white,
-    borderRadius: SIZES.radiusMd,
-    padding: SIZES.md,
-    marginBottom: SIZES.md,
-    ...SHADOWS.small,
+    borderRadius: SIZES.radiusLg,
+    marginBottom: SIZES.lg,
+    overflow: 'hidden',
+    ...SHADOWS.medium,
+  },
+  cardImageContainer: {
+    position: 'relative',
+    height: 150,
   },
   projectImage: {
-    width: 80,
+    width: '100%',
+    height: '100%',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     height: 80,
-    borderRadius: SIZES.radiusMd,
-    marginRight: SIZES.md,
   },
   projectInfo: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: SIZES.lg,
   },
   projectTitle: {
-    fontSize: SIZES.fontMd,
-    fontWeight: '600',
+    fontSize: SIZES.fontLg,
+    fontWeight: 'bold',
     color: COLORS.textPrimary,
-    marginBottom: SIZES.xs,
+    marginBottom: SIZES.md,
+  },
+  budgetContainer: {
+    marginBottom: SIZES.md,
+  },
+  budgetBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+    borderRadius: SIZES.radiusMd,
+    alignSelf: 'flex-start',
+  },
+  budgetIcon: {
+    fontSize: 16,
+    marginRight: SIZES.xs,
   },
   projectBudget: {
-    fontSize: SIZES.fontSm,
-    color: COLORS.primary,
-    fontWeight: '600',
-    marginBottom: SIZES.xs,
+    fontSize: SIZES.fontMd,
+    color: COLORS.white,
+    fontWeight: '700',
+  },
+  clientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SIZES.md,
+  },
+  clientIcon: {
+    fontSize: 14,
+    marginRight: SIZES.xs,
   },
   clientName: {
-    fontSize: SIZES.fontSm,
+    fontSize: SIZES.fontMd,
     color: COLORS.textSecondary,
-    marginBottom: SIZES.xs,
   },
   quoteStatus: {
-    backgroundColor: COLORS.success,
-    paddingHorizontal: SIZES.sm,
-    paddingVertical: SIZES.xs,
-    borderRadius: SIZES.radiusSm,
-    alignSelf: 'flex-start',
-    marginTop: SIZES.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+    borderRadius: SIZES.radiusMd,
+  },
+  quoteStatusIcon: {
+    fontSize: 16,
+    marginRight: SIZES.xs,
   },
   quoteStatusText: {
-    fontSize: SIZES.fontXs,
+    fontSize: SIZES.fontSm,
     color: COLORS.white,
     fontWeight: '600',
   },
   pendingStatus: {
-    backgroundColor: COLORS.warning,
-    paddingHorizontal: SIZES.sm,
-    paddingVertical: SIZES.xs,
-    borderRadius: SIZES.radiusSm,
-    alignSelf: 'flex-start',
-    marginTop: SIZES.xs,
+    borderRadius: SIZES.radiusMd,
+    overflow: 'hidden',
+  },
+  pendingStatusInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+  },
+  pendingStatusIcon: {
+    fontSize: 16,
+    marginRight: SIZES.xs,
   },
   pendingStatusText: {
-    fontSize: SIZES.fontXs,
-    color: COLORS.textPrimary,
+    fontSize: SIZES.fontSm,
+    color: COLORS.white,
     fontWeight: '600',
   },
-  arrow: {
+  arrowContainer: {
+    position: 'absolute',
+    bottom: SIZES.lg,
+    right: SIZES.lg,
+  },
+  arrowCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
-    paddingLeft: SIZES.sm,
+    alignItems: 'center',
   },
   arrowText: {
     fontSize: 20,
-    color: COLORS.textLight,
+    color: COLORS.white,
+    fontWeight: 'bold',
   },
+  // Empty state
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: SIZES.xl,
+  },
+  emptyContent: {
+    alignItems: 'center',
+    padding: SIZES.xxl,
     paddingBottom: SIZES.xxl + SIZES.xl,
   },
+  emptyIconContainer: {
+    marginBottom: SIZES.xl,
+  },
+  emptyIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 50,
+  },
   emptyTitle: {
-    fontSize: SIZES.fontXl,
+    fontSize: SIZES.fontXxl,
     fontWeight: 'bold',
     color: COLORS.textPrimary,
     textAlign: 'center',
@@ -221,5 +399,19 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
+    marginBottom: SIZES.xl,
+  },
+  emptyButton: {
+    borderRadius: SIZES.radiusMd,
+    overflow: 'hidden',
+  },
+  emptyButtonGradient: {
+    paddingHorizontal: SIZES.xl,
+    paddingVertical: SIZES.md,
+  },
+  emptyButtonText: {
+    fontSize: SIZES.fontLg,
+    color: COLORS.white,
+    fontWeight: 'bold',
   },
 });

@@ -2,6 +2,10 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Creator } from '../types';
 import { authService } from '../services/authService';
 import { socketService } from '../services/socketService';
+import { MOCK_CREATOR } from '../services/mockData';
+
+// Mode développement : utiliser les mock data au lieu du backend
+const USE_MOCK_DATA = true; // Mettre à false quand le backend sera prêt
 
 interface AuthContextType {
   creator: Creator | null;
@@ -20,14 +24,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Auto-login au démarrage de l'app
   useEffect(() => {
-    checkAuthStatus();
+    if (USE_MOCK_DATA) {
+      // Mode mock : pas d'auto-login
+      setIsLoading(false);
+    } else {
+      checkAuthStatus();
+    }
   }, []);
 
-  // Connexion au socket quand l'utilisateur est authentifié
+  // Connexion au socket quand l'utilisateur est authentifié (seulement si pas en mode mock)
   useEffect(() => {
-    if (creator && !socketService.isConnected()) {
+    if (!USE_MOCK_DATA && creator && !socketService.isConnected()) {
       connectSocket();
-    } else if (!creator && socketService.isConnected()) {
+    } else if (!USE_MOCK_DATA && !creator && socketService.isConnected()) {
       socketService.disconnect();
     }
   }, [creator]);
@@ -81,6 +90,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+
+      // Mode mock : connexion instantanée avec données de test
+      if (USE_MOCK_DATA) {
+        if (email && password) {
+          setCreator(MOCK_CREATOR);
+          return true;
+        }
+        return false;
+      }
+
+      // Mode production : vraie connexion au backend
       const response = await authService.login({ email, password });
       setCreator(response.user);
       return true;
@@ -95,6 +115,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       setIsLoading(true);
+
+      // Mode mock : déconnexion simple
+      if (USE_MOCK_DATA) {
+        setCreator(null);
+        return;
+      }
+
+      // Mode production : vraie déconnexion
       await authService.logout();
       socketService.disconnect();
       setCreator(null);
@@ -108,6 +136,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshUser = async () => {
     try {
+      // Mode mock : pas besoin de refresh
+      if (USE_MOCK_DATA) {
+        return;
+      }
+
+      // Mode production : récupérer l'utilisateur depuis le stockage
       const user = await authService.getUser();
       if (user) {
         setCreator(user);

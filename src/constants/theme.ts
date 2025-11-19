@@ -131,3 +131,15 @@ export const GLASS = {
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
 };
+
+// Export groupé pour compatibilité avec les nouveaux fichiers
+export const theme = {
+  colors: COLORS,
+  sizes: SIZES,
+  spacing: SIZES, // Alias pour spacing (utilisé dans les nouveaux fichiers)
+  borderRadius: SIZES, // Alias pour borderRadius (utilisé dans les nouveaux fichiers)
+  shadows: SHADOWS,
+  fonts: FONTS,
+  gradients: GRADIENTS,
+  glass: GLASS,
+};

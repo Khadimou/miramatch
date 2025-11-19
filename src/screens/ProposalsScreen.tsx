@@ -15,7 +15,11 @@ import { useNavigation } from '@react-navigation/native';
 import { Quote, Project } from '../types';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../context/AuthContext';
+import { useSwipe } from '../context/SwipeContext';
 import { theme } from '../constants/theme';
+
+// Mode développement : utiliser les mock data au lieu du backend
+const USE_MOCK_DATA = true; // Mettre à false quand le backend sera prêt
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -143,6 +147,7 @@ const QuoteList = ({ status }: { status: Quote['status'] }) => {
   const [quotes, setQuotes] = useState<QuoteWithProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const swipeContext = USE_MOCK_DATA ? useSwipe() : null;
 
   useEffect(() => {
     loadQuotes();
@@ -151,6 +156,27 @@ const QuoteList = ({ status }: { status: Quote['status'] }) => {
   const loadQuotes = async () => {
     try {
       setIsLoading(true);
+
+      // Mode mock : utiliser les quotes du SwipeContext
+      if (USE_MOCK_DATA && swipeContext) {
+        const allQuotes = swipeContext.quotes;
+        const filteredQuotes = allQuotes.filter((q) => q.status === status);
+
+        // Obtenir les projets matchés pour avoir les infos complètes
+        const matchedProjects = swipeContext.getMatchedProjects();
+
+        const quotesWithProjects = filteredQuotes.map((quote) => {
+          const project = matchedProjects.find((p) => p.id === quote.projectId);
+          return { ...quote, project };
+        });
+
+        setQuotes(quotesWithProjects);
+        setIsLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      // Mode production : charger depuis l'API
       const allQuotes = await apiService.getMyQuotes();
 
       // Filtrer par statut et charger les projets associés

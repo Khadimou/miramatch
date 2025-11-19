@@ -9,6 +9,7 @@ import { useMessages } from '../context/MessagesContext';
 // Screens
 import { LoginScreen } from '../screens/LoginScreen';
 import { SwipeScreen } from '../screens/SwipeScreen';
+import { MatchesScreen } from '../screens/MatchesScreen';
 import { ProposalsScreen } from '../screens/ProposalsScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
 import { ChatScreen } from '../screens/ChatScreen';
@@ -55,6 +56,16 @@ const MainTabs = () => {
           tabBarLabel: 'Découvrir',
           tabBarIcon: ({ color }) => (
             <TabIcon icon="🔥" color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Matches"
+        component={MatchesScreen}
+        options={{
+          tabBarLabel: 'Matches',
+          tabBarIcon: ({ color }) => (
+            <TabIcon icon="💖" color={color} />
           ),
         }}
       />

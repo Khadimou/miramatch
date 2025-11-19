@@ -4,6 +4,9 @@ import { apiService } from '../services/apiService';
 import { socketService } from '../services/socketService';
 import { useAuth } from './AuthContext';
 
+// Mode développement : utiliser les mock data au lieu du backend
+const USE_MOCK_DATA = true; // Mettre à false quand le backend sera prêt
+
 interface MessagesContextType {
   conversations: Conversation[];
   isLoading: boolean;
@@ -21,16 +24,17 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   // Charger les conversations au montage
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!USE_MOCK_DATA && isAuthenticated) {
       loadConversations();
     } else {
+      // Mode mock : pas de conversations
       setConversations([]);
     }
   }, [isAuthenticated]);
 
   // Écouter les nouveaux messages via socket
   useEffect(() => {
-    if (!isAuthenticated || !socketService.isConnected()) return;
+    if (USE_MOCK_DATA || !isAuthenticated || !socketService.isConnected()) return;
 
     const unsubscribe = socketService.onNewMessage((message: Message) => {
       updateConversationWithNewMessage(message);
@@ -42,6 +46,13 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   }, [isAuthenticated]);
 
   const loadConversations = async () => {
+    // Mode mock : ne rien faire
+    if (USE_MOCK_DATA) {
+      setConversations([]);
+      return;
+    }
+
+    // Mode production : charger depuis l'API
     try {
       setIsLoading(true);
       const data = await apiService.getMyConversations();
