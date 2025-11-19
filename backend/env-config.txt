@@ -1,0 +1,15 @@
+# Configuration pour le fichier .env du backend
+# Copiez ces valeurs dans un fichier .env dans le dossier backend/
+
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiZTQzYTAzMDYtMzFhNS00MmNmLTg3ZTEtODQ5OTA3YTM1ODNkIiwidGVuYW50X2lkIjoiYTNlZGQ2Y2ExYzgzODMyNDdlZjgwMzJhNjUxODg2NmZmZjZlMDNlYjJlOTI0ZGMwNjlmNWYyZWU2YThkYzFjZiIsImludGVybmFsX3NlY3JldCI6IjY2MzI2NWQ0LTY3YjItNDJlYy1iZmY4LThiZjlhY2Q5ZWRlMyJ9.p3jdlGP4CLjSMeDExCosrUY8cACdBZBspnMmB3rl4Nc"
+PULSE_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiOGI1NWEyNzYtNzRjYS00NGMyLTk2ZWMtYWNlMTFiNDM0MzU0IiwidGVuYW50X2lkIjoiYTNlZGQ2Y2ExYzgzODMyNDdlZjgwMzJhNjUxODg2NmZmZjZlMDNlYjJlOTI0ZGMwNjlmNWYyZWU2YThkYzFjZiIsImludGVybmFsX3NlY3JldCI6IjY2MzI2NWQ0LTY3YjItNDJlYy1iZmY4LThiZjlhY2Q5ZWRlMyJ9.RW6AiPfkKWTu4ybRr3vDHSPH4b7FJFFhvwmqukju9S0"
+JWT_SECRET="miramatch-secret-key-change-in-production"
+PORT=3000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:8081
+
+# Instructions:
+# 1. Créez un fichier nommé .env dans le dossier backend/
+# 2. Copiez-collez les lignes ci-dessus dans ce fichier
+# 3. Vous pouvez modifier les valeurs selon vos besoins
+

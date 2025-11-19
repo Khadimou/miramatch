@@ -1,0 +1,109 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import path from 'path';
+import fs from 'fs';
+
+// Charger les variables d'environnement
+dotenv.config();
+
+// Importer les routes
+import authRoutes from './routes/auth.routes';
+import projectsRoutes from './routes/projects.routes';
+import quotesRoutes from './routes/quotes.routes';
+import conversationsRoutes from './routes/conversations.routes';
+import uploadRoutes from './routes/upload.routes';
+
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:8081',
+    methods: ['GET', 'POST'],
+  },
+});
+
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:8081',
+  credentials: true,
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Créer le dossier uploads s'il n'existe pas
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Servir les fichiers statiques (uploads)
+app.use('/uploads', express.static(uploadsDir));
+
+// Routes API
+app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/quotes', quotesRoutes);
+app.use('/api/conversations', conversationsRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Route de test
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'MIRA MATCH API is running' });
+});
+
+// Gestion des erreurs
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Une erreur interne est survenue',
+  });
+});
+
+// Socket.io pour le chat en temps réel
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  // Rejoindre une conversation
+  socket.on('join_conversation', (conversationId: string) => {
+    socket.join(conversationId);
+    console.log(`Socket ${socket.id} joined conversation ${conversationId}`);
+  });
+
+  // Quitter une conversation
+  socket.on('leave_conversation', (conversationId: string) => {
+    socket.leave(conversationId);
+    console.log(`Socket ${socket.id} left conversation ${conversationId}`);
+  });
+
+  // Envoyer un message
+  socket.on('send_message', (data: { conversationId: string; message: any }) => {
+    io.to(data.conversationId).emit('new_message', data.message);
+  });
+
+  // Typage en cours
+  socket.on('typing', (data: { conversationId: string; userId: string }) => {
+    socket.to(data.conversationId).emit('user_typing', data);
+  });
+
+  socket.on('stop_typing', (data: { conversationId: string; userId: string }) => {
+    socket.to(data.conversationId).emit('user_stop_typing', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 API available at http://localhost:${PORT}/api`);
+  console.log(`💬 Socket.IO available at http://localhost:${PORT}`);
+});
+
+export { io };
+
