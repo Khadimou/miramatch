@@ -135,6 +135,9 @@ router.post('/', authenticate, requireCreator, async (req: AuthRequest, res) => 
 // Mettre à jour un devis
 router.patch('/:quoteId', authenticate, requireCreator, async (req: AuthRequest, res) => {
   try {
+    console.log('[PATCH Quote] Request received for quoteId:', req.params.quoteId);
+    console.log('[PATCH Quote] Updates:', req.body);
+
     const { quoteId } = req.params;
     const updates = req.body;
 
