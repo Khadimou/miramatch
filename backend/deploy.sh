@@ -5,7 +5,13 @@
 
 set -e  # Arrêter en cas d'erreur
 
+# Source nvm pour utiliser Node.js v20
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
 echo "🚀 Starting MIRA MATCH Backend Deployment..."
+echo "📌 Node version: $(node --version)"
+echo "📌 NPM version: $(npm --version)"
 
 # Configuration
 PROJECT_DIR="/home/thiolkia/MIRA_MATCH"
