@@ -40,6 +40,8 @@ export const EditQuoteScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
+    console.log('[EditQuote] Starting update...', { quoteId: quote.id });
+
     // Validation
     if (!price || parseFloat(price) <= 0) {
       Alert.alert('Erreur', 'Veuillez entrer un prix valide');
@@ -67,7 +69,9 @@ export const EditQuoteScreen = () => {
         currency: quote.currency,
       };
 
-      await apiService.updateQuote(quote.id, updates);
+      console.log('[EditQuote] Sending PATCH request...', updates);
+      const result = await apiService.updateQuote(quote.id, updates);
+      console.log('[EditQuote] Update successful:', result);
 
       Alert.alert(
         'Succès',
