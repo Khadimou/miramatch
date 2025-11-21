@@ -18,7 +18,9 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWk3aGxvYTIwMDAwMXFlYXByZ2dkMnFoIiwicm9sZSI6IkNSRUFUT1IiLCJpYXQiOjE3NjM2NjE5NDgsImV4cCI6MTc2NDI2Njc0OH0.KTWDtJneV2WZfx-OX4dv19DRgz6eXiUHIKuCdTx2dmo\")",
       "Bash(npx expo install:*)",
       "Bash(npx eas-cli:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

@@ -33,7 +33,7 @@ const CURRENCIES = ['XOF', 'EUR', 'USD'];
 
 export const ImprovedQuoteModalScreen = ({ navigation, route }: QuoteModalScreenProps) => {
   const { project } = route.params;
-  const { submitQuote } = useSwipe();
+  const { refreshProjects } = useSwipe();
   const { creator } = useAuth();
 
   const [price, setPrice] = useState('');
@@ -130,14 +130,8 @@ export const ImprovedQuoteModalScreen = ({ navigation, route }: QuoteModalScreen
         attachments: attachments.length > 0 ? attachments : undefined,
       });
 
-      // Aussi soumettre via le context pour la synchro locale
-      submitQuote({
-        projectId: project.id,
-        creatorId: creator.id,
-        price: priceNum,
-        deliveryTime: `${daysNum} jours`,
-        message,
-      });
+      // Rafraîchir les matches pour synchroniser l'état local
+      await refreshProjects();
 
       Alert.alert(
         'Devis envoyé !',
