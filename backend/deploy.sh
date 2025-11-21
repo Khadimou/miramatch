@@ -88,12 +88,19 @@ if ! command -v pm2 &> /dev/null; then
     npm install -g pm2
 fi
 
+# Charger les variables d'environnement pour PM2
+if [ -f "$BACKEND_DIR/.env" ]; then
+    log "📝 Loading environment variables..."
+    export $(cat "$BACKEND_DIR/.env" | grep -v '^#' | xargs)
+fi
+
 # Vérifier si l'app existe déjà dans PM2
 if pm2 list | grep -q "$APP_NAME"; then
     log "♻️  Restarting existing PM2 process..."
-    pm2 restart "$APP_NAME" || { error "Failed to restart PM2 process"; exit 1; }
+    pm2 restart "$APP_NAME" --update-env || { error "Failed to restart PM2 process"; exit 1; }
 else
     log "🆕 Starting new PM2 process..."
+    cd "$BACKEND_DIR"
     pm2 start npm --name "$APP_NAME" -- start || { error "Failed to start PM2 process"; exit 1; }
 fi
 
