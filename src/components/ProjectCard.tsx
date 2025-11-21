@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Project } from '../types';
 import { COLORS, SIZES, SHADOWS, GRADIENTS } from '../constants/theme';
+import { formatBadgeDate } from '../utils/dateFormatter';
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.9;
@@ -48,7 +49,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
           {project.deadline && (
             <BlurView intensity={90} tint="light" style={styles.deadlineBadge}>
               <Text style={styles.deadlineText}>
-                ⏰ {new Date(project.deadline).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                ⏰ {formatBadgeDate(project.deadline)}
               </Text>
             </BlurView>
           )}

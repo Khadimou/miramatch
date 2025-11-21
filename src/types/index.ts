@@ -104,6 +104,7 @@ export interface Match {
   creatorId: string;
   createdAt: string;
   hasQuote: boolean;
+  project?: Project; // Détails complets du projet (inclus depuis le backend)
 }
 
 // Types pour les messages et conversations
@@ -143,4 +144,16 @@ export interface AuthResponse {
 export interface LoginCredentials {
   email: string;
   password: string;
+}
+
+// Type pour les notifications
+export interface UserNotification {
+  id: string;
+  userId: string;
+  type: 'new_quote_offer' | 'quote_accepted' | 'quote_rejected' | 'new_message';
+  title: string;
+  message: string;
+  data?: any;
+  isRead: boolean;
+  createdAt: string;
 }

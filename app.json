@@ -14,7 +14,19 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.miramatch.app"
+      "bundleIdentifier": "com.miramatch.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "159.69.221.252": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,6 +39,11 @@
     },
     "web": {
       "favicon": "./assets/miramatch_logobis.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bb31162f-2614-4d72-9873-72fcefd1802f"
+      }
     }
   }
 }

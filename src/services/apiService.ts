@@ -1,5 +1,5 @@
 import { authService } from './authService';
-import { Project, Quote, Conversation, Message } from '../types';
+import { Project, Quote, Conversation, Message, UserNotification } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -136,6 +136,26 @@ export const apiService = {
       return await response.json();
     } catch (error) {
       console.error('Get quote error:', error);
+      throw error;
+    }
+  },
+
+  async deleteQuote(quoteId: string): Promise<void> {
+    try {
+      const headers = await authService.getAuthHeaders();
+      const response = await fetch(`${API_URL}/quotes/${quoteId}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
+        console.error('Delete quote failed - Status:', response.status);
+        console.error('Delete quote failed - Error:', errorData);
+        throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Delete quote error:', error);
       throw error;
     }
   },
@@ -277,6 +297,55 @@ export const apiService = {
       return await response.json();
     } catch (error) {
       console.error('Upload audio error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * NOTIFICATIONS
+   */
+  async getUnreadNotifications(): Promise<UserNotification[]> {
+    try {
+      const headers = await authService.getAuthHeaders();
+      const response = await fetch(`${API_URL}/notifications/unread`, {
+        headers,
+      });
+
+      if (!response.ok) throw new Error('Erreur lors de la récupération des notifications');
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get notifications error:', error);
+      throw error;
+    }
+  },
+
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    try {
+      const headers = await authService.getAuthHeaders();
+      const response = await fetch(`${API_URL}/notifications/${notificationId}/read`, {
+        method: 'PATCH',
+        headers,
+      });
+
+      if (!response.ok) throw new Error('Erreur lors du marquage de la notification');
+    } catch (error) {
+      console.error('Mark notification read error:', error);
+      throw error;
+    }
+  },
+
+  async markAllNotificationsAsRead(): Promise<void> {
+    try {
+      const headers = await authService.getAuthHeaders();
+      const response = await fetch(`${API_URL}/notifications/read-all`, {
+        method: 'PATCH',
+        headers,
+      });
+
+      if (!response.ok) throw new Error('Erreur lors du marquage des notifications');
+    } catch (error) {
+      console.error('Mark all notifications read error:', error);
       throw error;
     }
   },

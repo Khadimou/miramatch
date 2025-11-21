@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSwipe } from '../context/SwipeContext';
 import { COLORS, SIZES, SHADOWS, GRADIENTS } from '../constants/theme';
 import { Project } from '../types';
@@ -20,8 +21,15 @@ interface MatchesScreenProps {
 }
 
 export const MatchesScreen = ({ navigation }: MatchesScreenProps) => {
-  const { getMatchedProjects, matches, quotes } = useSwipe();
+  const { getMatchedProjects, matches, quotes, refreshProjects } = useSwipe();
   const matchedProjects = getMatchedProjects();
+
+  // Recharger les matches quand l'écran est affiché
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshProjects();
+    }, [])
+  );
 
   const hasQuoteForProject = (projectId: string) => {
     return quotes.some((quote) => quote.projectId === projectId);

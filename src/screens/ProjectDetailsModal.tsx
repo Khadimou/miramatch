@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Project } from '../types';
 import { theme } from '../constants/theme';
+import { formatDeadline } from '../utils/dateFormatter';
 
 const { width, height } = Dimensions.get('window');
 
@@ -128,7 +129,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
             {project.deadline && (
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Délai souhaité:</Text>
-                <Text style={styles.infoValue}>{project.deadline}</Text>
+                <Text style={styles.infoValue}>{formatDeadline(project.deadline)}</Text>
               </View>
             )}
 

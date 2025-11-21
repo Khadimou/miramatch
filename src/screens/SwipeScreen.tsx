@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSwipe } from '../context/SwipeContext';
 import { ProjectCard } from '../components/ProjectCard';
 import { ProjectDetailsModal } from './ProjectDetailsModal';
@@ -24,7 +25,14 @@ interface SwipeScreenProps {
 }
 
 export const SwipeScreen = ({ navigation }: SwipeScreenProps) => {
-  const { projects, likeProject, passProject } = useSwipe();
+  const { projects, likeProject, passProject, refreshProjects } = useSwipe();
+
+  // Recharger les projets quand l'écran est affiché
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshProjects();
+    }, [])
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const position = useRef(new Animated.ValueXY()).current;
   const [likeOpacity] = useState(new Animated.Value(0));

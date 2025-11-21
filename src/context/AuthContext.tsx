@@ -5,7 +5,7 @@ import { socketService } from '../services/socketService';
 import { MOCK_CREATOR } from '../services/mockData';
 
 // Mode développement : utiliser les mock data au lieu du backend
-const USE_MOCK_DATA = true; // Mettre à false quand le backend sera prêt
+const USE_MOCK_DATA = false; // Backend activé - Projets chargés depuis la DB
 
 interface AuthContextType {
   creator: Creator | null;
@@ -33,12 +33,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Connexion au socket quand l'utilisateur est authentifié (seulement si pas en mode mock)
+  // TEMPORAIREMENT DÉSACTIVÉ pour debugging
   useEffect(() => {
-    if (!USE_MOCK_DATA && creator && !socketService.isConnected()) {
-      connectSocket();
-    } else if (!USE_MOCK_DATA && !creator && socketService.isConnected()) {
-      socketService.disconnect();
-    }
+    // if (!USE_MOCK_DATA && creator && !socketService.isConnected()) {
+    //   connectSocket();
+    // } else if (!USE_MOCK_DATA && !creator && socketService.isConnected()) {
+    //   socketService.disconnect();
+    // }
   }, [creator]);
 
   const checkAuthStatus = async () => {

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../constants/theme';
 
@@ -44,6 +45,7 @@ const SettingsItem = ({ icon, title, onPress }: { icon: string; title: string; o
 
 export const ImprovedProfileScreen = () => {
   const { creator, logout } = useAuth();
+  const navigation = useNavigation();
 
   if (!creator) {
     return null;
@@ -61,7 +63,7 @@ export const ImprovedProfileScreen = () => {
   };
 
   const handleNotifications = () => {
-    Alert.alert('Notifications', 'Fonctionnalité à venir');
+    navigation.navigate('Notifications' as never);
   };
 
   const handleLanguage = () => {

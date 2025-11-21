@@ -17,6 +17,9 @@ import { MessagesScreen } from '../screens/MessagesScreen';
 import { ChatScreen } from '../screens/ChatScreen';
 import { ImprovedProfileScreen } from '../screens/ImprovedProfileScreen';
 import { ImprovedQuoteModalScreen } from '../screens/ImprovedQuoteModalScreen';
+import { QuoteDetailsScreen } from '../screens/QuoteDetailsScreen';
+import { EditQuoteScreen } from '../screens/EditQuoteScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
 
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 
@@ -209,8 +212,32 @@ export const AppNavigator = () => {
               }}
             />
             <Stack.Screen
+              name="QuoteDetails"
+              component={QuoteDetailsScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="EditQuote"
+              component={EditQuoteScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
               name="Chat"
               component={ChatScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="Notifications"
+              component={NotificationsScreen}
               options={{
                 presentation: 'card',
                 animation: 'slide_from_right',

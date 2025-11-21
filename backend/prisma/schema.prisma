@@ -79,14 +79,16 @@ model Seller {
   firstLogin          Boolean             @default(true)
   hasChosenSellerType Boolean             @default(false)
   sellerType          SellerType          @default(ATELIER)
-  
+
   // Relations
   User                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   profile             SellerProfile?
   quoteOffers         QuoteOffer[]        // Creator: offres de devis
   conversations       Conversation[]
   quoteRequests       QuoteRequest[]
-  
+  projectLikes        ProjectLike[]       // Projets likés
+  projectPasses       ProjectPass[]       // Projets passés
+
   calendarEvents      CalendarEvent[]
   customCollections   CustomCollection[]
   invoices            Invoice[]
@@ -146,8 +148,10 @@ model QuoteRequest {
   requirements         String?
   status               String            @default("open")
   budgetCurrency       String?           @default("XOF")
-  
+
   offers               QuoteOffer[]      @relation("QuoteOffers")
+  likes                ProjectLike[]     @relation("ProjectLikes")
+  passes               ProjectPass[]     @relation("ProjectPasses")
   seller               Seller?           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -180,6 +184,36 @@ model QuoteOffer {
   @@index([status])
 }
 
+// ProjectLike = Match dans MIRA MATCH
+model ProjectLike {
+  id             String       @id @default(cuid())
+  sellerId       String
+  quoteRequestId String
+  createdAt      DateTime     @default(now())
+
+  seller         Seller       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  quoteRequest   QuoteRequest @relation("ProjectLikes", fields: [quoteRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([sellerId, quoteRequestId])
+  @@index([sellerId])
+  @@index([quoteRequestId])
+}
+
+// ProjectPass = Projet passé/ignoré par un créateur
+model ProjectPass {
+  id             String       @id @default(cuid())
+  sellerId       String
+  quoteRequestId String
+  createdAt      DateTime     @default(now())
+
+  seller         Seller       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  quoteRequest   QuoteRequest @relation("ProjectPasses", fields: [quoteRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([sellerId, quoteRequestId])
+  @@index([sellerId])
+  @@index([quoteRequestId])
+}
+
 model Conversation {
   id               String    @id @default(cuid())
   createdAt        DateTime  @default(now())
@@ -192,7 +226,7 @@ model Conversation {
   subject          String?
   productId        String?
   isRead           Boolean   @default(false)
-  
+
   product          Product?  @relation(fields: [productId], references: [id])
   seller           Seller    @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)

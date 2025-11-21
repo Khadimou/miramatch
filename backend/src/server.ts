@@ -15,19 +15,20 @@ import projectsRoutes from './routes/projects.routes';
 import quotesRoutes from './routes/quotes.routes';
 import conversationsRoutes from './routes/conversations.routes';
 import uploadRoutes from './routes/upload.routes';
+import notificationsRoutes from './routes/notifications.routes';
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:8081',
+    origin: '*', // Accepter toutes les origines en développement
     methods: ['GET', 'POST'],
   },
 });
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8081',
+  origin: '*', // Accepter toutes les origines en développement
   credentials: true,
 }));
 app.use(express.json());
@@ -48,6 +49,7 @@ app.use('/api/projects', projectsRoutes);
 app.use('/api/quotes', quotesRoutes);
 app.use('/api/conversations', conversationsRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Route de test
 app.get('/api/health', (req, res) => {
@@ -97,11 +99,13 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOST = '0.0.0.0'; // Écouter sur toutes les interfaces réseau
 
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+httpServer.listen(PORT, HOST, () => {
+  console.log(`🚀 Server running on ${HOST}:${PORT}`);
   console.log(`📡 API available at http://localhost:${PORT}/api`);
+  console.log(`📡 API also available at http://172.17.12.55:${PORT}/api (for mobile)`);
   console.log(`💬 Socket.IO available at http://localhost:${PORT}`);
 });
 

@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,7 +20,7 @@ import { useSwipe } from '../context/SwipeContext';
 import { theme } from '../constants/theme';
 
 // Mode développement : utiliser les mock data au lieu du backend
-const USE_MOCK_DATA = true; // Mettre à false quand le backend sera prêt
+const USE_MOCK_DATA = false; // Backend activé
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -58,7 +59,7 @@ const StatusBadge = ({ status }: { status: Quote['status'] }) => {
 };
 
 // Quote Card Component
-const QuoteCard = ({ quote }: { quote: QuoteWithProject }) => {
+const QuoteCard = ({ quote, onEdit, onDelete }: { quote: QuoteWithProject; onEdit: (quote: Quote) => void; onDelete: (quoteId: string) => void }) => {
   const navigation = useNavigation();
 
   const handlePress = () => {
@@ -67,6 +68,9 @@ const QuoteCard = ({ quote }: { quote: QuoteWithProject }) => {
 
   const project = quote.project;
   if (!project) return null;
+
+  // Peut modifier/supprimer seulement si le statut est "pending"
+  const canModify = quote.status === 'pending';
 
   return (
     <TouchableOpacity onPress={handlePress} style={styles.card}>
@@ -106,6 +110,37 @@ const QuoteCard = ({ quote }: { quote: QuoteWithProject }) => {
 
       <View style={styles.cardFooter}>
         <StatusBadge status={quote.status} />
+
+        {canModify && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              onPress={() => onEdit(quote)}
+              style={styles.editButton}
+            >
+              <Text style={styles.editButtonText}>✏️ Modifier</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  'Supprimer la proposition',
+                  'Êtes-vous sûr de vouloir supprimer cette proposition ? Cette action est irréversible.',
+                  [
+                    { text: 'Annuler', style: 'cancel' },
+                    {
+                      text: 'Supprimer',
+                      style: 'destructive',
+                      onPress: () => onDelete(quote.id),
+                    },
+                  ]
+                );
+              }}
+              style={styles.deleteButton}
+            >
+              <Text style={styles.deleteButtonText}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -144,6 +179,7 @@ const EmptyState = ({ status }: { status: Quote['status'] }) => {
 
 // Quote List Component
 const QuoteList = ({ status }: { status: Quote['status'] }) => {
+  const navigation = useNavigation();
   const [quotes, setQuotes] = useState<QuoteWithProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -209,6 +245,31 @@ const QuoteList = ({ status }: { status: Quote['status'] }) => {
     loadQuotes();
   };
 
+  const handleEdit = async (quote: Quote) => {
+    try {
+      // Charger les détails du projet
+      const project = await apiService.getProjectById(quote.projectId);
+
+      // Naviguer vers l'écran d'édition
+      navigation.navigate('EditQuote' as never, { quote, project } as never);
+    } catch (error) {
+      console.error('Load project error:', error);
+      Alert.alert('Erreur', 'Impossible de charger les détails du projet');
+    }
+  };
+
+  const handleDelete = async (quoteId: string) => {
+    try {
+      await apiService.deleteQuote(quoteId);
+      // Recharger la liste
+      loadQuotes();
+      Alert.alert('Succès', 'Proposition supprimée avec succès');
+    } catch (error) {
+      console.error('Delete quote error:', error);
+      Alert.alert('Erreur', 'Impossible de supprimer la proposition');
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -225,7 +286,9 @@ const QuoteList = ({ status }: { status: Quote['status'] }) => {
     <FlatList
       data={quotes}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <QuoteCard quote={item} />}
+      renderItem={({ item }) => (
+        <QuoteCard quote={item} onEdit={handleEdit} onDelete={handleDelete} />
+      )}
       contentContainerStyle={styles.listContainer}
       refreshControl={
         <RefreshControl
@@ -375,6 +438,33 @@ const styles = StyleSheet.create({
   cardFooter: {
     padding: theme.spacing.md,
     paddingTop: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  editButton: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.primary + '20',
+    borderRadius: theme.borderRadius.radiusMd,
+  },
+  editButtonText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    paddingHorizontal: theme.spacing.sm + 2,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.danger + '20',
+    borderRadius: theme.borderRadius.radiusMd,
+  },
+  deleteButtonText: {
+    fontSize: 18,
   },
   statusBadge: {
     flexDirection: 'row',

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../config/database';
 import { authenticate, AuthRequest, requireCreator } from '../middleware/auth';
+import { notificationService } from '../services/notification.service';
 
 const router = Router();
 
@@ -26,6 +27,15 @@ router.post('/', authenticate, requireCreator, async (req: AuthRequest, res) => 
       return res.status(404).json({ error: 'Profil créateur non trouvé' });
     }
 
+    // Récupérer le projet pour obtenir l'ID du client
+    const quoteRequest = await prisma.quoteRequest.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!quoteRequest) {
+      return res.status(404).json({ error: 'Projet non trouvé' });
+    }
+
     // Créer l'offre de devis
     const quoteOffer = await prisma.quoteOffer.create({
       data: {
@@ -40,6 +50,63 @@ router.post('/', authenticate, requireCreator, async (req: AuthRequest, res) => 
         status: 'PENDING',
       },
     });
+
+    // Créer ou récupérer la conversation entre le créateur et le client
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        userId: quoteRequest.userId,
+        sellerId: seller.id,
+        productId: null, // Pour MIRA MATCH, on n'utilise pas productId car c'est pour QuoteRequest
+      },
+    });
+
+    if (!conversation) {
+      conversation = await prisma.conversation.create({
+        data: {
+          userId: quoteRequest.userId,
+          sellerId: seller.id,
+          subject: `Devis pour ${quoteRequest.productName || 'votre projet'}`,
+          lastMessageAt: new Date(),
+        },
+      });
+
+      // Envoyer un message automatique dans la conversation
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: seller.id,
+          senderType: 'creator',
+          content: `Bonjour ! Je vous ai envoyé un devis pour votre projet "${quoteRequest.productName || 'personnalisé'}". N'hésitez pas à me contacter si vous avez des questions.`,
+          type: 'text',
+          isRead: false,
+        },
+      });
+    }
+
+    // Récupérer les informations du vendeur pour la notification
+    const sellerUser = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { name: true },
+    });
+
+    // Envoyer les notifications au client (push + DB)
+    try {
+      await notificationService.notifyNewQuoteOffer(
+        quoteRequest.userId,
+        seller.id,
+        quoteRequest.id,
+        quoteOffer.id,
+        sellerUser?.name || 'Un créateur',
+        quoteRequest.productName || 'votre projet',
+        quoteOffer.price,
+        quoteOffer.currency,
+        quoteOffer.deliveryTime,
+        quoteOffer.description
+      );
+    } catch (notifError) {
+      console.error('[Quote] Notification error (non-blocking):', notifError);
+      // Ne pas bloquer la création du devis si la notification échoue
+    }
 
     // Transformer en format Quote de MIRA MATCH
     const quote = {
@@ -82,6 +149,9 @@ router.patch('/:quoteId', authenticate, requireCreator, async (req: AuthRequest,
 
     const existingQuote = await prisma.quoteOffer.findUnique({
       where: { id: quoteId },
+      include: {
+        quoteRequest: true, // Inclure le projet pour la notification
+      },
     });
 
     if (!existingQuote || existingQuote.sellerId !== seller.id) {
@@ -99,6 +169,27 @@ router.patch('/:quoteId', authenticate, requireCreator, async (req: AuthRequest,
         attachments: updates.attachments ? JSON.stringify(updates.attachments) : undefined,
       },
     });
+
+    // Envoyer une notification au client pour l'informer de la modification
+    try {
+      const sellerUser = await prisma.user.findUnique({
+        where: { id: req.userId },
+        select: { name: true },
+      });
+
+      await notificationService.notifyQuoteUpdated(
+        existingQuote.quoteRequest.userId,
+        sellerUser?.name || 'Un créateur',
+        existingQuote.quoteRequest.productName || 'votre projet',
+        updatedQuote.price,
+        updatedQuote.currency,
+        updatedQuote.deliveryTime,
+        updatedQuote.id
+      );
+    } catch (notifError) {
+      console.error('[Quote Update] Notification error (non-blocking):', notifError);
+      // Ne pas bloquer la modification du devis si la notification échoue
+    }
 
     const quote = {
       id: updatedQuote.id,
@@ -206,6 +297,54 @@ router.get('/:quoteId', authenticate, async (req: AuthRequest, res) => {
   } catch (error) {
     console.error('Get quote error:', error);
     return res.status(500).json({ error: 'Erreur lors de la récupération du devis' });
+  }
+});
+
+// Supprimer un devis
+router.delete('/:quoteId', authenticate, requireCreator, async (req: AuthRequest, res) => {
+  try {
+    const { quoteId } = req.params;
+    console.log('[DELETE Quote] Request from user:', req.userId, 'for quoteId:', quoteId);
+
+    // Vérifier que le devis appartient bien au créateur
+    const seller = await prisma.seller.findUnique({
+      where: { userId: req.userId },
+    });
+
+    if (!seller) {
+      console.log('[DELETE Quote] Seller not found for userId:', req.userId);
+      return res.status(404).json({ error: 'Profil créateur non trouvé' });
+    }
+
+    console.log('[DELETE Quote] Seller found:', seller.id);
+
+    const existingQuote = await prisma.quoteOffer.findUnique({
+      where: { id: quoteId },
+    });
+
+    if (!existingQuote) {
+      console.log('[DELETE Quote] Quote not found:', quoteId);
+      return res.status(404).json({ error: 'Devis non trouvé' });
+    }
+
+    if (existingQuote.sellerId !== seller.id) {
+      console.log('[DELETE Quote] Quote does not belong to seller. Quote sellerId:', existingQuote.sellerId, 'User sellerId:', seller.id);
+      return res.status(403).json({ error: 'Vous n\'êtes pas autorisé à supprimer ce devis' });
+    }
+
+    console.log('[DELETE Quote] Deleting quote:', quoteId);
+
+    // Supprimer le devis
+    await prisma.quoteOffer.delete({
+      where: { id: quoteId },
+    });
+
+    console.log('[DELETE Quote] Quote deleted successfully:', quoteId);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('[DELETE Quote] Error:', error);
+    console.error('[DELETE Quote] Error details:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ error: 'Erreur lors de la suppression du devis' });
   }
 });
 
