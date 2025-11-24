@@ -30,7 +30,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 };
 
 export const requireCreator = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.userRole !== 'CREATOR' && req.userRole !== 'ADMIN') {
+  if (req.userRole !== 'CREATOR' && req.userRole !== 'SELLER' && req.userRole !== 'ADMIN') {
     return res.status(403).json({ error: 'Accès réservé aux créateurs' });
   }
   next();
