@@ -171,7 +171,7 @@ router.get('/project/:projectId', authenticate, async (req: AuthRequest, res) =>
     }
 
     // Chercher la conversation liée au projet et au créateur
-    const conversation = await prisma.conversation.findFirst({
+    let conversation = await prisma.conversation.findFirst({
       where: {
         productId: projectId,
         sellerId: user.seller.id,
@@ -193,8 +193,54 @@ router.get('/project/:projectId', authenticate, async (req: AuthRequest, res) =>
       },
     });
 
+    // Si la conversation n'existe pas, la créer automatiquement
     if (!conversation) {
-      return res.status(404).json({ error: 'Conversation non trouvée' });
+      // Récupérer les infos du projet pour créer la conversation
+      const quoteRequest = await prisma.quoteRequest.findUnique({
+        where: { id: projectId },
+      });
+
+      if (!quoteRequest) {
+        return res.status(404).json({ error: 'Projet non trouvé' });
+      }
+
+      // Créer la conversation
+      conversation = await prisma.conversation.create({
+        data: {
+          userId: quoteRequest.userId,
+          sellerId: user.seller.id,
+          productId: projectId,
+          subject: `Devis pour ${quoteRequest.productName || 'votre projet'}`,
+          lastMessageAt: new Date(),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          messages: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
+          },
+        },
+      });
+
+      // Envoyer un message automatique dans la nouvelle conversation
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: user.seller.id,
+          senderType: 'creator',
+          content: `Bonjour ! Je suis ravi que vous ayez accepté ma proposition pour "${quoteRequest.productName || 'votre projet'}". N'hésitez pas à me contacter pour discuter des détails.`,
+          type: 'text',
+          isRead: false,
+        },
+      });
     }
 
     // Formater la conversation
