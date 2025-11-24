@@ -66,11 +66,28 @@ const QuoteCard = ({ quote, onEdit, onDelete }: { quote: QuoteWithProject; onEdi
     navigation.navigate('QuoteDetails' as never, { quoteId: quote.id } as never);
   };
 
+  const handleContactClient = async () => {
+    try {
+      // Récupérer la conversation liée au projet
+      const conversation = await apiService.getConversationByProjectId(quote.projectId);
+
+      if (conversation) {
+        navigation.navigate('Chat' as never, { conversationId: conversation.id } as never);
+      } else {
+        Alert.alert('Erreur', 'Aucune conversation trouvée pour ce projet');
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+      Alert.alert('Erreur', 'Impossible de charger la conversation');
+    }
+  };
+
   const project = quote.project;
   if (!project) return null;
 
   // Peut modifier/supprimer seulement si le statut est "pending"
   const canModify = quote.status === 'pending';
+  const isAccepted = quote.status === 'accepted';
 
   return (
     <TouchableOpacity onPress={handlePress} style={styles.card}>
@@ -140,6 +157,15 @@ const QuoteCard = ({ quote, onEdit, onDelete }: { quote: QuoteWithProject; onEdi
               <Text style={styles.deleteButtonText}>🗑️</Text>
             </TouchableOpacity>
           </View>
+        )}
+
+        {isAccepted && (
+          <TouchableOpacity
+            onPress={handleContactClient}
+            style={styles.contactButton}
+          >
+            <Text style={styles.contactButtonText}>💬 Contacter le client</Text>
+          </TouchableOpacity>
         )}
       </View>
     </TouchableOpacity>
@@ -214,9 +240,11 @@ const QuoteList = ({ status }: { status: Quote['status'] }) => {
 
       // Mode production : charger depuis l'API
       const allQuotes = await apiService.getMyQuotes();
+      console.log('[ProposalsScreen] All quotes:', allQuotes.map(q => ({ id: q.id, status: q.status })));
 
       // Filtrer par statut et charger les projets associés
       const filteredQuotes = allQuotes.filter((q) => q.status === status);
+      console.log(`[ProposalsScreen] Filtered quotes for status "${status}":`, filteredQuotes.length);
 
       // Charger les détails des projets pour chaque quote
       const quotesWithProjects = await Promise.all(
@@ -383,6 +411,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: theme.spacing.md,
+    paddingBottom: 100, // Space pour le TabBar
   },
   card: {
     backgroundColor: theme.colors.card,
@@ -465,6 +494,17 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     fontSize: 18,
+  },
+  contactButton: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.success + '20',
+    borderRadius: theme.borderRadius.radiusMd,
+  },
+  contactButtonText: {
+    color: theme.colors.success,
+    fontSize: 14,
+    fontWeight: '600',
   },
   statusBadge: {
     flexDirection: 'row',

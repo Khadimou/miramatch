@@ -92,12 +92,17 @@ export const apiService = {
 
   async updateQuote(quoteId: string, updates: Partial<Quote>): Promise<Quote> {
     try {
+      const url = `${API_URL}/quotes/${quoteId}`;
+      console.log('[apiService] PATCH request to:', url);
+
       const headers = await authService.getAuthHeaders();
-      const response = await fetch(`${API_URL}/quotes/${quoteId}`, {
+      const response = await fetch(url, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(updates),
       });
+
+      console.log('[apiService] PATCH response status:', response.status);
 
       if (!response.ok) throw new Error('Erreur lors de la mise à jour du devis');
 
@@ -175,6 +180,25 @@ export const apiService = {
       return await response.json();
     } catch (error) {
       console.error('Get conversations error:', error);
+      throw error;
+    }
+  },
+
+  async getConversationByProjectId(projectId: string): Promise<Conversation | null> {
+    try {
+      const headers = await authService.getAuthHeaders();
+      const response = await fetch(`${API_URL}/conversations/project/${projectId}`, {
+        headers,
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Erreur lors de la récupération de la conversation');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get conversation by project error:', error);
       throw error;
     }
   },

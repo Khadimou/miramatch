@@ -153,6 +153,91 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+// Obtenir une conversation par projectId
+router.get('/project/:projectId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { projectId } = req.params;
+
+    // Récupérer l'utilisateur et vérifier s'il est créateur
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      include: {
+        seller: true,
+      },
+    });
+
+    if (!user || !user.seller) {
+      return res.status(404).json({ error: 'Profil créateur non trouvé' });
+    }
+
+    // Chercher la conversation liée au projet et au créateur
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        productId: projectId,
+        sellerId: user.seller.id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        messages: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
+      },
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation non trouvée' });
+    }
+
+    // Formater la conversation
+    const formattedConversation = {
+      id: conversation.id,
+      projectId: conversation.productId || '',
+      creatorId: conversation.sellerId,
+      clientId: conversation.userId,
+      client: {
+        id: conversation.user.id,
+        name: conversation.user.name || 'Client',
+        profileImage: conversation.user.image,
+      },
+      lastMessage: conversation.messages[0] ? {
+        id: conversation.messages[0].id,
+        conversationId: conversation.id,
+        senderId: conversation.messages[0].senderId,
+        senderType: conversation.messages[0].senderType as 'creator' | 'client',
+        content: conversation.messages[0].content,
+        audioUrl: conversation.messages[0].audioUrl,
+        audioDuration: conversation.messages[0].duration,
+        type: conversation.messages[0].type as 'text' | 'audio',
+        isRead: conversation.messages[0].isRead,
+        createdAt: conversation.messages[0].createdAt.toISOString(),
+      } : undefined,
+      unreadCount: await prisma.message.count({
+        where: {
+          conversationId: conversation.id,
+          isRead: false,
+          senderType: 'client',
+        },
+      }),
+      createdAt: conversation.createdAt.toISOString(),
+      updatedAt: conversation.updatedAt.toISOString(),
+    };
+
+    return res.status(200).json(formattedConversation);
+  } catch (error) {
+    console.error('Get conversation by project error:', error);
+    return res.status(500).json({ error: 'Erreur lors de la récupération de la conversation' });
+  }
+});
+
 // Obtenir les messages d'une conversation
 router.get('/:conversationId/messages', authenticate, async (req: AuthRequest, res) => {
   try {

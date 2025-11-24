@@ -56,7 +56,7 @@ router.post('/', authenticate, requireCreator, async (req: AuthRequest, res) => 
       where: {
         userId: quoteRequest.userId,
         sellerId: seller.id,
-        productId: null, // Pour MIRA MATCH, on n'utilise pas productId car c'est pour QuoteRequest
+        productId: quoteRequest.id, // Conversation liée au projet spécifique
       },
     });
 
@@ -65,6 +65,7 @@ router.post('/', authenticate, requireCreator, async (req: AuthRequest, res) => 
         data: {
           userId: quoteRequest.userId,
           sellerId: seller.id,
+          productId: quoteRequest.id, // Lier la conversation au projet
           subject: `Devis pour ${quoteRequest.productName || 'votre projet'}`,
           lastMessageAt: new Date(),
         },
