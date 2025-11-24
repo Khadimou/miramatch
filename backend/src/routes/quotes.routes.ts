@@ -52,11 +52,14 @@ router.post('/', authenticate, requireCreator, async (req: AuthRequest, res) => 
     });
 
     // Créer ou récupérer la conversation entre le créateur et le client
+    // Note: productId n'est pas utilisé car il référence Product, pas QuoteRequest
     let conversation = await prisma.conversation.findFirst({
       where: {
         userId: quoteRequest.userId,
         sellerId: seller.id,
-        productId: quoteRequest.id, // Conversation liée au projet spécifique
+        subject: {
+          contains: quoteRequest.productName || quoteRequest.id,
+        },
       },
     });
 
@@ -65,8 +68,8 @@ router.post('/', authenticate, requireCreator, async (req: AuthRequest, res) => 
         data: {
           userId: quoteRequest.userId,
           sellerId: seller.id,
-          productId: quoteRequest.id, // Lier la conversation au projet
-          subject: `Devis pour ${quoteRequest.productName || 'votre projet'}`,
+          productId: null, // Laisser null car il référence Product
+          subject: `Devis pour ${quoteRequest.productName || 'votre projet'} [${quoteRequest.id}]`,
           lastMessageAt: new Date(),
         },
       });

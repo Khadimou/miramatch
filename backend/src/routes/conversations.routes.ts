@@ -170,11 +170,24 @@ router.get('/project/:projectId', authenticate, async (req: AuthRequest, res) =>
       return res.status(404).json({ error: 'Profil créateur non trouvé' });
     }
 
-    // Chercher la conversation liée au projet et au créateur
+    // Récupérer les infos du projet
+    const quoteRequest = await prisma.quoteRequest.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!quoteRequest) {
+      return res.status(404).json({ error: 'Projet non trouvé' });
+    }
+
+    // Chercher la conversation entre le créateur et le client
+    // Note: productId n'est pas utilisé car il référence Product, pas QuoteRequest
     let conversation = await prisma.conversation.findFirst({
       where: {
-        productId: projectId,
+        userId: quoteRequest.userId,
         sellerId: user.seller.id,
+        subject: {
+          contains: quoteRequest.productName || projectId,
+        },
       },
       include: {
         user: {
@@ -195,22 +208,13 @@ router.get('/project/:projectId', authenticate, async (req: AuthRequest, res) =>
 
     // Si la conversation n'existe pas, la créer automatiquement
     if (!conversation) {
-      // Récupérer les infos du projet pour créer la conversation
-      const quoteRequest = await prisma.quoteRequest.findUnique({
-        where: { id: projectId },
-      });
-
-      if (!quoteRequest) {
-        return res.status(404).json({ error: 'Projet non trouvé' });
-      }
-
-      // Créer la conversation
+      // Créer la conversation (sans productId car il référence Product)
       conversation = await prisma.conversation.create({
         data: {
           userId: quoteRequest.userId,
           sellerId: user.seller.id,
-          productId: projectId,
-          subject: `Devis pour ${quoteRequest.productName || 'votre projet'}`,
+          productId: null, // Laisser null car il référence Product
+          subject: `Devis pour ${quoteRequest.productName || 'votre projet'} [${projectId}]`,
           lastMessageAt: new Date(),
         },
         include: {
@@ -246,7 +250,7 @@ router.get('/project/:projectId', authenticate, async (req: AuthRequest, res) =>
     // Formater la conversation
     const formattedConversation = {
       id: conversation.id,
-      projectId: conversation.productId || '',
+      projectId: projectId, // Utiliser le projectId passé en paramètre
       creatorId: conversation.sellerId,
       clientId: conversation.userId,
       client: {
