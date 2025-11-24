@@ -5,7 +5,7 @@ import { socketService } from '../services/socketService';
 import { useAuth } from './AuthContext';
 
 // Mode développement : utiliser les mock data au lieu du backend
-const USE_MOCK_DATA = true; // Mettre à false quand le backend sera prêt
+const USE_MOCK_DATA = false; // Backend activé
 
 interface MessagesContextType {
   conversations: Conversation[];
@@ -26,6 +26,18 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!USE_MOCK_DATA && isAuthenticated) {
       loadConversations();
+
+      // Connecter le socket
+      const initSocket = async () => {
+        try {
+          if (!socketService.isConnected()) {
+            await socketService.connect();
+          }
+        } catch (error) {
+          console.error('[MessagesContext] Socket connection error:', error);
+        }
+      };
+      initSocket();
     } else {
       // Mode mock : pas de conversations
       setConversations([]);

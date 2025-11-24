@@ -20,7 +20,7 @@ import { COLORS, SIZES, GRADIENTS } from '../constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
-export const LoginScreen = () => {
+export const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -152,7 +152,7 @@ export const LoginScreen = () => {
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Pas encore de compte ?</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => (navigation as any).navigate('Register')}>
               <Text style={styles.footerLink}>S'inscrire maintenant ✨</Text>
             </TouchableOpacity>
           </View>

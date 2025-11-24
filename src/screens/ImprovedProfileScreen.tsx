@@ -247,7 +247,7 @@ export const ImprovedProfileScreen = () => {
           </LinearGradient>
         </TouchableOpacity>
 
-        <View style={{ height: theme.spacing.xxl }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
   );

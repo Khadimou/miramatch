@@ -10,6 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Screens
 import { LoginScreen } from '../screens/LoginScreen';
+import { RegisterScreen } from '../screens/RegisterScreen';
+import { VerifyCodeScreen } from '../screens/VerifyCodeScreen';
 import { SwipeScreen } from '../screens/SwipeScreen';
 import { MatchesScreen } from '../screens/MatchesScreen';
 import { ProposalsScreen } from '../screens/ProposalsScreen';
@@ -198,7 +200,25 @@ export const AppNavigator = () => {
       >
         {!isAuthenticated ? (
           // Auth screens
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen
+              name="Register"
+              component={RegisterScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="VerifyCode"
+              component={VerifyCodeScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+          </>
         ) : (
           // App screens
           <>

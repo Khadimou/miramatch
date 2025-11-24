@@ -168,4 +168,129 @@ export const authService = {
       ...(token && { Authorization: `Bearer ${token}` }),
     };
   },
+
+  /**
+   * Inscription d'un nouveau créateur
+   */
+  async register(data: {
+    name: string;
+    email: string;
+    password: string;
+    phone: string;
+    brandName: string;
+    country: string;
+    employees: string;
+    selfProduction: boolean;
+    productionCountry: string;
+    monthlyProduction: number;
+    additionalInfo?: string;
+  }): Promise<{ success: boolean; userId?: string; error?: string }> {
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: result.error || 'Erreur lors de l\'inscription',
+        };
+      }
+
+      return {
+        success: true,
+        userId: result.userId,
+      };
+    } catch (error: any) {
+      console.error('Register error:', error);
+      return {
+        success: false,
+        error: error.message || 'Une erreur est survenue',
+      };
+    }
+  },
+
+  /**
+   * Vérifier le code de vérification
+   */
+  async verifyCode(
+    email: string,
+    code: string
+  ): Promise<{ success: boolean; token?: string; error?: string }> {
+    try {
+      const response = await fetch(`${API_URL}/auth/verify-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: result.error || 'Code invalide ou expiré',
+        };
+      }
+
+      // Sauvegarder le token et l'utilisateur après vérification
+      if (result.token && result.user) {
+        await this.saveToken(result.token);
+        await this.saveUser(result.user);
+      }
+
+      return {
+        success: true,
+        token: result.token,
+      };
+    } catch (error: any) {
+      console.error('Verify code error:', error);
+      return {
+        success: false,
+        error: error.message || 'Une erreur est survenue',
+      };
+    }
+  },
+
+  /**
+   * Renvoyer le code de vérification
+   */
+  async resendCode(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${API_URL}/auth/resend-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: result.error || 'Impossible de renvoyer le code',
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      console.error('Resend code error:', error);
+      return {
+        success: false,
+        error: error.message || 'Une erreur est survenue',
+      };
+    }
+  },
 };
