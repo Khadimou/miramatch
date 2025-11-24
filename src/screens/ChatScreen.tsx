@@ -162,9 +162,22 @@ export const ChatScreen = ({ navigation, route }: ChatScreenProps) => {
   const conversation = getConversation(conversationId);
 
   useEffect(() => {
+    // Connecter le socket si nécessaire
+    const initSocket = async () => {
+      try {
+        if (!socketService.isConnected()) {
+          console.log('[ChatScreen] Connecting socket...');
+          await socketService.connect();
+        }
+        socketService.joinConversation(conversationId);
+      } catch (error) {
+        console.error('[ChatScreen] Socket connection error:', error);
+      }
+    };
+
     loadMessages();
     setupSocketListeners();
-    socketService.joinConversation(conversationId);
+    initSocket();
 
     // Request audio permissions
     requestAudioPermissions();

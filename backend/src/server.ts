@@ -69,15 +69,15 @@ io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
   // Rejoindre une conversation
-  socket.on('join_conversation', (conversationId: string) => {
-    socket.join(conversationId);
-    console.log(`Socket ${socket.id} joined conversation ${conversationId}`);
+  socket.on('join_conversation', (data: { conversationId: string }) => {
+    socket.join(data.conversationId);
+    console.log(`Socket ${socket.id} joined conversation ${data.conversationId}`);
   });
 
   // Quitter une conversation
-  socket.on('leave_conversation', (conversationId: string) => {
-    socket.leave(conversationId);
-    console.log(`Socket ${socket.id} left conversation ${conversationId}`);
+  socket.on('leave_conversation', (data: { conversationId: string }) => {
+    socket.leave(data.conversationId);
+    console.log(`Socket ${socket.id} left conversation ${data.conversationId}`);
   });
 
   // Envoyer un message
@@ -86,12 +86,12 @@ io.on('connection', (socket) => {
   });
 
   // Typage en cours
-  socket.on('typing', (data: { conversationId: string; userId: string }) => {
+  socket.on('typing_start', (data: { conversationId: string }) => {
     socket.to(data.conversationId).emit('user_typing', data);
   });
 
-  socket.on('stop_typing', (data: { conversationId: string; userId: string }) => {
-    socket.to(data.conversationId).emit('user_stop_typing', data);
+  socket.on('typing_stop', (data: { conversationId: string }) => {
+    socket.to(data.conversationId).emit('user_typing_stopped', data);
   });
 
   socket.on('disconnect', () => {
