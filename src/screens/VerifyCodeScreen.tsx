@@ -23,7 +23,7 @@ const { width, height } = Dimensions.get('window');
 
 export const VerifyCodeScreen = ({ navigation, route }: any) => {
   const { email, userId } = route.params;
-  const { login } = useAuth();
+  const { refreshUser } = useAuth();
 
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -81,17 +81,18 @@ export const VerifyCodeScreen = ({ navigation, route }: any) => {
       const result = await authService.verifyCode(email, verificationCode);
 
       if (result.success) {
+        // Le token et l'utilisateur sont déjà sauvegardés par authService.verifyCode()
+        // On rafraîchit juste l'état de l'authentification
+        await refreshUser();
+
         Alert.alert(
           'Compte vérifié !',
-          'Votre compte a été vérifié avec succès',
+          'Votre compte a été vérifié avec succès. Bienvenue sur MIRA MATCH ! 🎉',
           [
             {
-              text: 'OK',
-              onPress: async () => {
-                // Auto-login après vérification
-                if (result.token) {
-                  await login(email, '');
-                }
+              text: 'Commencer',
+              onPress: () => {
+                // La navigation sera gérée automatiquement par le changement d'état
               },
             },
           ]
