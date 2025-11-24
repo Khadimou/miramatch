@@ -32,8 +32,24 @@ export const VerifyCodeScreen = ({ navigation, route }: any) => {
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   const handleCodeChange = (value: string, index: number) => {
+    // Si on colle plusieurs caractères (code complet)
     if (value.length > 1) {
-      value = value[value.length - 1];
+      const digits = value.replace(/\D/g, '').slice(0, 6).split('');
+      const newCode = [...code];
+
+      // Remplir les inputs à partir de l'index actuel
+      digits.forEach((digit, i) => {
+        if (index + i < 6) {
+          newCode[index + i] = digit;
+        }
+      });
+
+      setCode(newCode);
+
+      // Focus sur le dernier input rempli ou le suivant
+      const lastFilledIndex = Math.min(index + digits.length, 5);
+      inputRefs.current[lastFilledIndex]?.focus();
+      return;
     }
 
     const newCode = [...code];
