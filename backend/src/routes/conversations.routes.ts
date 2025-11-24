@@ -48,38 +48,66 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
       });
 
       // Transformer en format Conversation de MIRA MATCH
-      const formattedConversations = await Promise.all(conversations.map(async (conv) => ({
-        id: conv.id,
-        projectId: conv.productId || '',
-        creatorId: conv.sellerId,
-        clientId: conv.userId,
-        client: {
-          id: conv.user.id,
-          name: conv.user.name || 'Client',
-          profileImage: conv.user.image,
-        },
-        lastMessage: conv.messages[0] ? {
-          id: conv.messages[0].id,
-          conversationId: conv.id,
-          senderId: conv.messages[0].senderId,
-          senderType: conv.messages[0].senderType as 'creator' | 'client',
-          content: conv.messages[0].content,
-          audioUrl: conv.messages[0].audioUrl,
-          audioDuration: conv.messages[0].duration,
-          type: conv.messages[0].type as 'text' | 'audio',
-          isRead: conv.messages[0].isRead,
-          createdAt: conv.messages[0].createdAt.toISOString(),
-        } : undefined,
-        unreadCount: await prisma.message.count({
-          where: {
-            conversationId: conv.id,
-            isRead: false,
-            senderType: 'client',
+      const formattedConversations = await Promise.all(conversations.map(async (conv) => {
+        // Extraire le projectId depuis le subject (format: "Devis pour xxx [projectId]")
+        const projectIdMatch = conv.subject?.match(/\[(.*?)\]$/);
+        const projectId = projectIdMatch ? projectIdMatch[1] : conv.productId || '';
+
+        // Charger les infos du projet si disponible
+        let project = undefined;
+        if (projectId) {
+          try {
+            const quoteRequest = await prisma.quoteRequest.findUnique({
+              where: { id: projectId },
+            });
+            if (quoteRequest) {
+              project = {
+                id: quoteRequest.id,
+                title: quoteRequest.productName || 'Projet',
+                productName: quoteRequest.productName,
+                category: quoteRequest.designType || 'Non spécifié',
+                images: quoteRequest.customImageUrl ? [quoteRequest.customImageUrl] : [],
+              };
+            }
+          } catch (error) {
+            console.error('Error loading project for conversation:', error);
+          }
+        }
+
+        return {
+          id: conv.id,
+          projectId,
+          creatorId: conv.sellerId,
+          clientId: conv.userId,
+          client: {
+            id: conv.user.id,
+            name: conv.user.name || 'Client',
+            profileImage: conv.user.image,
           },
-        }),
-        createdAt: conv.createdAt.toISOString(),
-        updatedAt: conv.updatedAt.toISOString(),
-      })));
+          project,
+          lastMessage: conv.messages[0] ? {
+            id: conv.messages[0].id,
+            conversationId: conv.id,
+            senderId: conv.messages[0].senderId,
+            senderType: conv.messages[0].senderType as 'creator' | 'client',
+            content: conv.messages[0].content,
+            audioUrl: conv.messages[0].audioUrl,
+            audioDuration: conv.messages[0].duration,
+            type: conv.messages[0].type as 'text' | 'audio',
+            isRead: conv.messages[0].isRead,
+            createdAt: conv.messages[0].createdAt.toISOString(),
+          } : undefined,
+          unreadCount: await prisma.message.count({
+            where: {
+              conversationId: conv.id,
+              isRead: false,
+              senderType: 'client',
+            },
+          }),
+          createdAt: conv.createdAt.toISOString(),
+          updatedAt: conv.updatedAt.toISOString(),
+        };
+      }));
 
       return res.status(200).json(formattedConversations);
     } else {
@@ -112,38 +140,66 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
         },
       });
 
-      const formattedConversations = await Promise.all(conversations.map(async (conv) => ({
-        id: conv.id,
-        projectId: conv.productId || '',
-        creatorId: conv.sellerId,
-        clientId: conv.userId,
-        client: {
-          id: conv.seller.User.id,
-          name: conv.seller.User.name || 'Créateur',
-          profileImage: conv.seller.User.image,
-        },
-        lastMessage: conv.messages[0] ? {
-          id: conv.messages[0].id,
-          conversationId: conv.id,
-          senderId: conv.messages[0].senderId,
-          senderType: conv.messages[0].senderType as 'creator' | 'client',
-          content: conv.messages[0].content,
-          audioUrl: conv.messages[0].audioUrl,
-          audioDuration: conv.messages[0].duration,
-          type: conv.messages[0].type as 'text' | 'audio',
-          isRead: conv.messages[0].isRead,
-          createdAt: conv.messages[0].createdAt.toISOString(),
-        } : undefined,
-        unreadCount: await prisma.message.count({
-          where: {
-            conversationId: conv.id,
-            isRead: false,
-            senderType: 'creator',
+      const formattedConversations = await Promise.all(conversations.map(async (conv) => {
+        // Extraire le projectId depuis le subject (format: "Devis pour xxx [projectId]")
+        const projectIdMatch = conv.subject?.match(/\[(.*?)\]$/);
+        const projectId = projectIdMatch ? projectIdMatch[1] : conv.productId || '';
+
+        // Charger les infos du projet si disponible
+        let project = undefined;
+        if (projectId) {
+          try {
+            const quoteRequest = await prisma.quoteRequest.findUnique({
+              where: { id: projectId },
+            });
+            if (quoteRequest) {
+              project = {
+                id: quoteRequest.id,
+                title: quoteRequest.productName || 'Projet',
+                productName: quoteRequest.productName,
+                category: quoteRequest.designType || 'Non spécifié',
+                images: quoteRequest.customImageUrl ? [quoteRequest.customImageUrl] : [],
+              };
+            }
+          } catch (error) {
+            console.error('Error loading project for conversation:', error);
+          }
+        }
+
+        return {
+          id: conv.id,
+          projectId,
+          creatorId: conv.sellerId,
+          clientId: conv.userId,
+          client: {
+            id: conv.seller.User.id,
+            name: conv.seller.User.name || 'Créateur',
+            profileImage: conv.seller.User.image,
           },
-        }),
-        createdAt: conv.createdAt.toISOString(),
-        updatedAt: conv.updatedAt.toISOString(),
-      })));
+          project,
+          lastMessage: conv.messages[0] ? {
+            id: conv.messages[0].id,
+            conversationId: conv.id,
+            senderId: conv.messages[0].senderId,
+            senderType: conv.messages[0].senderType as 'creator' | 'client',
+            content: conv.messages[0].content,
+            audioUrl: conv.messages[0].audioUrl,
+            audioDuration: conv.messages[0].duration,
+            type: conv.messages[0].type as 'text' | 'audio',
+            isRead: conv.messages[0].isRead,
+            createdAt: conv.messages[0].createdAt.toISOString(),
+          } : undefined,
+          unreadCount: await prisma.message.count({
+            where: {
+              conversationId: conv.id,
+              isRead: false,
+              senderType: 'creator',
+            },
+          }),
+          createdAt: conv.createdAt.toISOString(),
+          updatedAt: conv.updatedAt.toISOString(),
+        };
+      }));
 
       return res.status(200).json(formattedConversations);
     }
